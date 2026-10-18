@@ -1,0 +1,62 @@
+{
+  "name": "homebridge-resideo-native",
+  "version": "1.0.0",
+  "description": "Honeywell Home / Resideo Lyric T6 and T6R thermostats using the Resideo app API, without developer keys or Home Assistant.",
+  "main": "index.js",
+  "type": "commonjs",
+  "bin": {
+    "resideo-native-login": "bin/login.js"
+  },
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || ^26.0.0",
+    "homebridge": "^1.8.0 || ^2.0.0"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "homebridge",
+    "resideo",
+    "honeywell",
+    "honeywell-home",
+    "lyric",
+    "t6",
+    "thermostat"
+  ],
+  "author": "Kosztyk",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kosztyk/homebridge-resideo-native.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Kosztyk/homebridge-resideo-native/issues"
+  },
+  "homepage": "https://github.com/Kosztyk/homebridge-resideo-native#readme",
+  "files": [
+    "index.js",
+    "lib/",
+    "bin/",
+    "homebridge-ui/",
+    "config.schema.json",
+    "config.example.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "docs/"
+  ],
+  "dependencies": {
+    "@homebridge/plugin-ui-utils": "^2.2.6"
+  },
+  "scripts": {
+    "build": "npm run check",
+    "test": "node --test test/*.test.js",
+    "check": "node tools/check.js",
+    "prepack": "npm run check && npm test"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "jsdom": "^27.4.0"
+  }
+}

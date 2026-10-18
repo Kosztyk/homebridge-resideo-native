@@ -1,0 +1,133 @@
+<style>
+  .resideo-settings { max-width: 850px; margin: 0 auto 1.5rem; }
+  .resideo-settings .login-card { border: 1px solid #8885; border-radius: 12px; padding: 1.25rem; margin: 1rem 0; }
+  .resideo-settings .hint { opacity: .8; font-size: .9rem; }
+  .resideo-settings .actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1rem; }
+  .resideo-settings .status { padding: .8rem; border-radius: 8px; background: #7771; margin: .7rem 0; white-space: pre-line; }
+  .resideo-settings .status.error { color: #bf3838; background: #c5353510; }
+  .resideo-settings input { margin: .25rem 0 .8rem; }
+  .resideo-settings details { margin: 1rem 0; }
+  .resideo-settings #devices { overflow-x: auto; }
+</style>
+
+<section class="resideo-settings" aria-label="Resideo account settings">
+  <h3>Resideo Native</h3>
+  <p>Connect your Honeywell Home / Resideo T6 or T6R directly to Homebridge.</p>
+  <div id="status" class="status" role="status" aria-live="polite">Checking sign-in…</div>
+  <div class="login-card">
+    <h5>Sign in with your Resideo account</h5>
+    <p class="hint">Your password is used once for sign-in and is never saved in Homebridge configuration. Select your account country in the settings below.</p>
+    <form id="login-form">
+      <label for="username">Email address</label>
+      <input id="username" class="form-control" type="email" autocomplete="username" required>
+      <label for="password">Password</label>
+      <input id="password" class="form-control" type="password" autocomplete="current-password" required>
+      <div class="actions">
+        <button class="btn btn-primary" type="submit">Sign in</button>
+        <button class="btn btn-outline-secondary" id="test" type="button">Test connection</button>
+      </div>
+    </form>
+    <div id="devices"></div>
+  </div>
+  <details id="browser-details">
+    <summary>Browser sign-in / additional verification</summary>
+    <p class="hint">Use this if Resideo cannot complete email/password sign-in automatically.</p>
+    <button class="btn btn-outline-primary" id="start-browser" type="button">Start a new browser sign-in</button>
+    <div id="browser-flow" hidden>
+      <p><a id="login-link" href="#" target="_blank" rel="noopener noreferrer">Open Resideo sign-in</a></p>
+      <ol class="hint">
+        <li>In the new tab, open Developer Tools → Network and enable <strong>Preserve log</strong> before signing in.</li>
+        <li>Complete sign-in and any verification prompts.</li>
+        <li>Copy the failed request's full URL beginning <code>com.honeywell.acs.lyric.enterprise://oauth2redirect</code>. Some browsers show it in the Console. Paste it below.</li>
+      </ol>
+      <form id="callback-form">
+        <label for="callback">Full Resideo callback URL</label>
+        <input id="callback" class="form-control" type="password" autocomplete="off" spellcheck="false" required>
+        <button class="btn btn-primary" type="submit">Complete sign-in</button>
+      </form>
+    </div>
+  </details>
+  <details>
+    <summary>Advanced: existing legacy app refresh token</summary>
+    <p class="hint">Only for a refresh token issued to the legacy Resideo Android client. Developer API and First Alert tokens cannot be used.</p>
+    <form id="token-form">
+      <label for="refresh-token">Refresh token</label>
+      <input id="refresh-token" class="form-control" type="password" autocomplete="off" spellcheck="false" required>
+      <button class="btn btn-outline-primary" type="submit">Import token</button>
+    </form>
+  </details>
+  <p class="hint">After signing in, save these settings and restart Homebridge. This plugin uses the Resideo cloud; it does not require Home Assistant or developer keys.</p>
+</section>
+
+<script>
+(() => {
+  const el = id => document.getElementById(id);
+  function status(message, error = false) {
+    el('status').textContent = message;
+    el('status').classList.toggle('error', error);
+  }
+  function displayDevices(devices) {
+    el('devices').replaceChildren();
+    if (!devices) return;
+    const table = document.createElement('table'); table.className = 'table table-sm mt-3';
+    const header = table.createTHead().insertRow();
+    for (const title of ['Thermostat', 'Model', 'Device ID', 'Connection']) {
+      const cell = document.createElement('th'); cell.textContent = title; header.appendChild(cell);
+    }
+    const body = table.createTBody();
+    for (const device of devices) {
+      const row = body.insertRow();
+      for (const value of [device.name, device.model, device.id, device.online ? 'Online' : 'Offline']) row.insertCell().textContent = String(value);
+    }
+    el('devices').appendChild(table);
+  }
+  function browserFlow(result) {
+    const url = new URL(result.url);
+    if (url.protocol !== 'https:' || url.hostname !== 'lyricprod.b2clogin.com') throw new Error('Invalid sign-in link.');
+    el('login-link').href = result.url;
+    el('browser-flow').hidden = false;
+    el('browser-details').open = true;
+    el('callback').value = '';
+    status('Complete browser sign-in using the link below, then paste the callback URL.');
+  }
+  async function country() {
+    const blocks = await homebridge.getPluginConfig();
+    return blocks[0]?.country || 'RO';
+  }
+  async function run(operation) {
+    for (const button of document.querySelectorAll('.resideo-settings button')) button.disabled = true;
+    homebridge.disableSaveButton();
+    try {
+      const result = await operation();
+      if (result.browserRequired) { browserFlow(result); return; }
+      displayDevices(result.devices);
+      if (result.devices) status(`Connected. Found ${result.devices.length} thermostat(s). Save settings and restart Homebridge after a new sign-in.`);
+      else status(result.signedIn ? 'An account is saved. Use Test connection to check discovery.' : 'Sign in to connect your Resideo thermostats.');
+    } catch (error) {
+      status(error.message || 'The request failed. Try again.', true);
+      const code = error.error?.code || error.code;
+      if (code && code !== 'invalid_callback' && el('browser-details').open && el('callback').value) {
+        el('browser-flow').hidden = true;
+      }
+    } finally {
+      el('password').value = ''; el('refresh-token').value = ''; el('callback').value = '';
+      for (const button of document.querySelectorAll('.resideo-settings button')) button.disabled = false;
+      homebridge.enableSaveButton();
+    }
+  }
+  el('login-form').addEventListener('submit', event => {
+    event.preventDefault(); status('Signing in…');
+    run(async () => homebridge.request('/login', { username: el('username').value.trim(), password: el('password').value, country: await country() }));
+  });
+  el('test').addEventListener('click', () => { status('Checking the account…'); run(() => homebridge.request('/test')); });
+  el('start-browser').addEventListener('click', () => run(async () => homebridge.request('/browser', { country: await country() })));
+  el('callback-form').addEventListener('submit', event => { event.preventDefault(); run(() => homebridge.request('/callback', { redirectUrl: el('callback').value.trim() })); });
+  el('token-form').addEventListener('submit', event => { event.preventDefault(); run(() => homebridge.request('/refresh-token', { refreshToken: el('refresh-token').value.trim() })); });
+  (async () => {
+    const blocks = await homebridge.getPluginConfig();
+    if (!blocks.length) await homebridge.updatePluginConfig([{ platform: 'ResideoNative', name: 'Resideo Native', country: 'RO', pollInterval: 60, defaultHold: 'TemporaryHold', exposeHoldSwitches: true, devices: [], debug: false }]);
+    homebridge.showSchemaForm();
+    await run(() => homebridge.request('/status'));
+  })().catch(() => status('Settings could not be loaded. Reopen plugin settings and try again.', true));
+})();
+</script>

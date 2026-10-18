@@ -1,0 +1,20 @@
+name: Test
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24, 26]
+        homebridge: ['1.11.4', '2.4.0']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci --ignore-scripts
+      - run: npm install --prefix .qa --no-save --ignore-scripts homebridge@${{ matrix.homebridge }}
+      - run: npm run check
+      - run: npm test
+        env:
+          HOMEBRIDGE_TEST_PATH: ${{ github.workspace }}/.qa/node_modules/homebridge

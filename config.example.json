@@ -1,0 +1,10 @@
+{
+  "platform": "ResideoNative",
+  "name": "Resideo Native",
+  "country": "RO",
+  "pollInterval": 60,
+  "defaultHold": "TemporaryHold",
+  "exposeHoldSwitches": true,
+  "devices": [],
+  "debug": false
+}

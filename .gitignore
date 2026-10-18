@@ -1,0 +1,9 @@
+node_modules/
+*.tgz
+coverage/
+.qa/
+.DS_Store
+resideo-native/
+authorization.json
+authorization.lock
+*.log
