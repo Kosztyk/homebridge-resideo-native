@@ -1,8 +1,8 @@
 # Homebridge Resideo Native
 
 **Honeywell Home / Resideo Lyric T6 and T6R thermostats in Apple Home**, using the
-same legacy cloud protocol as the Resideo Smart Home Android app. Developed by
-**Kosztyk**. Version **1.0.0**.
+same legacy cloud protocol as the Resideo Smart Home Android app.
+
 
 Sign in with your Resideo account in the Homebridge plugin settings. No
 developer account, consumer key, consumer secret, SmartThings connection,
