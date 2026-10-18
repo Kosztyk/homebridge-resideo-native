@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.1 — 2026-10-18
+
+- Treat Resideo's normal `EquipmentOff` relay status as idle. Version 1.0.0
+  returned HomeKit communication error `-70402` for this status while Heat,
+  Cool, or Auto was selected, making a reachable thermostat show No Response.
+- Log the affected HomeKit characteristic when a Resideo reading is missing
+  or unsupported, then log recovery. Repeated identical failures are suppressed;
+  cloud response bodies, credentials, and tokens are never logged.
+- Add Homebridge regression coverage for heating/idle transitions, missing
+  activity and hold readings, diagnostic deduplication, and recovery.
+
 ## 1.0.0 — 2026-10-18
 
 - Initial Homebridge port of Resideo Native Home Assistant 0.1.2.

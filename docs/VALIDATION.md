@@ -1,10 +1,10 @@
-# Validation — 1.0.0
+# Validation — 1.0.1
 
 Date: 18 October 2026. Runtime: Node.js 24.19.0 / npm 11.9.0.
 
 ## Automated checks
 
-- **52 tests passed** in the complete suite against **Homebridge 1.11.4** (hap-nodejs 0.14.3)
+- **55 tests passed** in the complete suite against **Homebridge 1.11.4** (hap-nodejs 0.14.3)
   and **Homebridge 2.4.0** (@homebridge/hap-nodejs 2.2.2).
 - Protocol tests use a real local HTTP server, not just stubbed request methods.
   They exercise form submission, cookies/CSRF, PKCE, native callbacks, token
@@ -23,6 +23,14 @@ Date: 18 October 2026. Runtime: Node.js 24.19.0 / npm 11.9.0.
   controls, temperature/mode writes, combined automatic thresholds, schedule
   switches, unavailable devices, dynamic discovery/exclusion, cache restoration,
   optional humidity, and authentication suspension.
+- Reproduced the 1.0.0 availability defect against Homebridge 2.4.0: a valid
+  online thermostat in Heat mode with relay status `EquipmentOff` returned
+  `-70402` for `CurrentHeatingCoolingState`, while current and target temperature
+  still read successfully and the plugin logged no warning. The 1.0.1 regression
+  test exercises Heat → EquipmentOff → Heat transitions and verifies successful
+  HomeKit reads throughout. Missing operation/hold readings remain explicit
+  errors, with one warning per affected characteristic and a recovery message;
+  unsupported raw response values are not logged.
 - HomeKit's own post-set value commit is followed by the server readback state,
   including when a simulated accepted command has not changed the target.
 - The actual custom UI server is forked with IPC and tested for startup,

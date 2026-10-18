@@ -1,8 +1,8 @@
 # Homebridge Resideo Native
 
 **Honeywell Home / Resideo Lyric T6 and T6R thermostats in Apple Home**, using the
-same legacy cloud protocol as the Resideo Smart Home Android app.
-
+same legacy cloud protocol as the Resideo Smart Home Android app. Developed by
+**Kosztyk**. Version **1.0.1**.
 
 Sign in with your Resideo account in the Homebridge plugin settings. No
 developer account, consumer key, consumer secret, SmartThings connection,
@@ -19,11 +19,11 @@ Requirements: **Node.js 22.12+, 24, or 26**, **Homebridge 1.8+ or 2.x**, and the
 Homebridge UI for the graphical sign-in screen. Node.js 24 is suitable.
 The command-line sign-in tool also works without the UI.
 
-1. Copy `homebridge-resideo-native-1.0.0.tgz` to the Homebridge host.
+1. Copy `homebridge-resideo-native-1.0.1.tgz` to the Homebridge host.
 2. In the **Homebridge UI → Terminal**, install the file using its full path:
 
    ```sh
-   npm install -g /full/path/homebridge-resideo-native-1.0.0.tgz
+   npm install -g /full/path/homebridge-resideo-native-1.0.1.tgz
    ```
 
    If your installation requires administrator privileges, run the installation
@@ -185,6 +185,21 @@ discovery, then saves tokens. Add the platform block and restart Homebridge.
   Successful sign-in to a different account replaces accessories after restart.
 - Debug logs contain discovery counts, never passwords, tokens, native callback
   URLs, API response bodies, or raw account data.
+- Resideo's `EquipmentOff` operation status means the equipment is idle while
+  the selected mode may remain Heat, Cool, or Auto. It is reported as HomeKit
+  idle, without changing the selected mode or making the thermostat unavailable.
+  See the [Resideo thermostat response example](https://developer.honeywellhome.com/node/92).
+- Missing or unsupported readings produce a warning naming the affected HomeKit
+  characteristic, such as `CurrentHeatingCoolingState`, with a recovery message
+  when valid data returns. These messages are enabled without debug mode and
+  repeat only after recovery. Unknown activity is not guessed from temperature.
+
+### Updating from 1.0.0
+
+Install the 1.0.1 package and restart Homebridge. Existing authorization and
+accessory identities are reused; re-pairing is not required. This fixes a
+reproduced idle-status mapping bug. If No Response persists, attach the new
+`Resideo Native` warning/recovery entries so the affected reading can be traced.
 
 The plugin requires internet access and a working Resideo cloud account.
 “Native” refers to the mobile-app protocol; this is cloud control.

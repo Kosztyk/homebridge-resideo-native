@@ -130,6 +130,53 @@ test('actual Homebridge API and HomeKit characteristics', { skip: !homebridgePat
     raw.displayIndoorHumidity = false; await s.client.update();
     assert.equal(s.service.testCharacteristic(s.C.CurrentRelativeHumidity), false);
   });
+  await t.test('normal EquipmentOff relay transitions keep the thermostat available in HomeKit', async t => {
+    const s = await fixture(t); const raw = rawDevice(s.payload);
+    for (const [operation, expected] of [['Heat', 1], ['EquipmentOff', 0], ['Heat', 1], [' equipmentoff ', 0]]) {
+      raw.thermostat.operationStatus.mode = operation;
+      await s.client.update();
+      assert.equal(await s.service.getCharacteristic(s.C.CurrentHeatingCoolingState).handleGetRequest(), expected);
+      assert.equal(await s.service.getCharacteristic(s.C.CurrentTemperature).handleGetRequest(), 26);
+      assert.equal(await s.service.getCharacteristic(s.C.TargetTemperature).handleGetRequest(), 23);
+      assert.equal(await s.service.getCharacteristic(s.C.TargetHeatingCoolingState).handleGetRequest(), 1);
+      assert.equal(s.service.getCharacteristic(s.C.CurrentHeatingCoolingState).statusCode, 0);
+    }
+    assert.equal(s.messages.some(([level]) => level === 'warn'), false);
+    assert.equal(s.warnings.length, 0);
+  });
+  await t.test('missing activity is diagnosed once and recovery is logged without inventing a running state', async t => {
+    const s = await fixture(t); const raw = rawDevice(s.payload);
+    delete raw.thermostat.operationStatus;
+    await s.client.update();
+    await assert.rejects(s.service.getCharacteristic(s.C.CurrentHeatingCoolingState).handleGetRequest(), error => error === -70402);
+    await s.client.update();
+    await assert.rejects(s.service.getCharacteristic(s.C.CurrentHeatingCoolingState).handleGetRequest());
+    const failures = s.messages.filter(([level, message]) => level === 'warn' && message.includes('CurrentHeatingCoolingState'));
+    assert.equal(failures.length, 1);
+    assert.match(failures[0][1], /Resideo value is missing or unsupported/);
+    assert.equal(await s.service.getCharacteristic(s.C.CurrentTemperature).handleGetRequest(), 26);
+    raw.thermostat.operationStatus = { mode: 'EquipmentOff' };
+    await s.client.update();
+    assert.equal(await s.service.getCharacteristic(s.C.CurrentHeatingCoolingState).handleGetRequest(), 0);
+    assert.equal(s.messages.filter(([level, message]) => level === 'info' && message.includes('CurrentHeatingCoolingState is available again')).length, 1);
+    assert.equal(s.warnings.length, 0);
+  });
+  await t.test('missing hold readings identify the affected switches without repeated warnings or raw cloud data', async t => {
+    const s = await fixture(t); const raw = rawDevice(s.payload);
+    delete raw.thermostat.changeableValues.thermostatSetpointStatus;
+    raw.thermostat.operationStatus.mode = 'private-unrecognized-response-must-not-be-logged';
+    await s.client.update(); await s.client.update();
+    const schedule = s.accessory.getServiceById(s.api.hap.Service.Switch, 'resideo-schedule');
+    await assert.rejects(schedule.getCharacteristic(s.C.On).handleGetRequest());
+    assert.equal(s.messages.filter(([level, message]) => level === 'warn' && message.includes('resideo-schedule.On')).length, 1);
+    assert.equal(s.messages.filter(([level, message]) => level === 'warn' && message.includes('resideo-permanent.On')).length, 1);
+    assert.equal(JSON.stringify(s.messages).includes('private-unrecognized-response'), false);
+    raw.thermostat.changeableValues.thermostatSetpointStatus = 'NoHold';
+    raw.thermostat.operationStatus = { mode: 'EquipmentOff' };
+    await s.client.update();
+    assert.equal(await schedule.getCharacteristic(s.C.On).handleGetRequest(), true);
+    assert.equal(s.messages.filter(([level, message]) => level === 'info' && message.includes('resideo-schedule.On is available again')).length, 1);
+  });
   await t.test('authentication failures stop repeated cloud attempts until authorization changes', async t => {
     const s = await fixture(t); let calls = 0;
     s.client.update = async () => { calls++; throw new AuthenticationError(); };
@@ -151,4 +198,5 @@ test('heating activity is not inferred from the target/current temperature diffe
   const d = parseLocations(payload).get('T6-test'); assert.equal(currentState(d), null);
   raw.thermostat.operationStatus.mode = 'Idle'; assert.equal(currentState(d), 0);
   raw.thermostat.operationStatus.mode = 'Heat'; assert.equal(currentState(d), 1);
+  raw.thermostat.operationStatus.mode = 'EquipmentOff'; assert.equal(currentState(d), 0);
 });

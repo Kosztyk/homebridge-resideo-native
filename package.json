@@ -1,6 +1,6 @@
 {
   "name": "homebridge-resideo-native",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Honeywell Home / Resideo Lyric T6 and T6R thermostats using the Resideo app API, without developer keys or Home Assistant.",
   "main": "index.js",
   "type": "commonjs",
