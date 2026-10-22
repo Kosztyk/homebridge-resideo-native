@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2 — 2026-10-22
+
+- Declare HAP transport support for the Homebridge catalog.
+- Use standard object-level required arrays in the configuration schema.
+
 ## 1.0.1 — 2026-10-18
 
 - Treat Resideo's normal `EquipmentOff` relay status as idle. Version 1.0.0

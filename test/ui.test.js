@@ -64,26 +64,9 @@ test('interactive fallback shows the browser link and retains it after a local c
   assert.equal(ui.el('callback').value, '');
 });
 
-function standardSchema(schema) {
-  const value = structuredClone(schema);
-  function visit(node) {
-    if (!node || typeof node !== 'object') return;
-    if (node.properties) {
-      const required = [];
-      for (const [key, child] of Object.entries(node.properties)) {
-        if (child.required === true) { required.push(key); delete child.required; }
-        visit(child);
-      }
-      if (required.length) node.required = required;
-    }
-    if (node.items) visit(node.items);
-  }
-  visit(value); return value;
-}
-
 test('schema-generated defaults validate, while a device override needs an explicit ID', () => {
   const schema = require('../config.schema.json'); const config = require('../config.example.json');
-  const validate = new Ajv({ strict: false }).compile(standardSchema(schema.schema));
+  const validate = new Ajv({ strict: false }).compile(schema.schema);
   assert.equal(validate(config), true, JSON.stringify(validate.errors));
   assert.equal(validate({ ...config, devices: [{ exclude: false }] }), false);
   assert.equal(validate({ ...config, devices: [{ id: 'T6-test', exclude: false }] }), true);
