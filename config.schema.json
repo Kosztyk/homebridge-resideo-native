@@ -7,21 +7,77 @@
   "schema": {
     "type": "object",
     "properties": {
-      "name": { "title": "Name", "type": "string", "default": "Resideo Native", "required": true },
-      "country": { "title": "Resideo account country", "type": "string", "default": "RO", "pattern": "^[A-Za-z]{2}$", "description": "Two-letter country used by your Resideo app account. Used for sign-in." },
-      "pollInterval": { "title": "Account refresh interval (seconds)", "type": "integer", "minimum": 30, "maximum": 600, "default": 60, "description": "One shared poll for all thermostats. Commands also request a server readback." },
-      "defaultHold": { "title": "Manual temperature changes", "type": "string", "enum": ["TemporaryHold", "PermanentHold"], "default": "TemporaryHold", "description": "Temporary hold lasts until the next scheduled period. An existing permanent hold is preserved." },
-      "exposeHoldSwitches": { "title": "Show schedule and permanent-hold switches", "type": "boolean", "default": true },
-      "devices": {
-        "title": "Optional device overrides", "type": "array", "default": [],
-        "description": "Leave empty to discover all thermostats. Obtain device IDs with Test connection above. Blank rows are ignored.",
-        "items": { "type": "object", "properties": {
-          "id": { "title": "Device ID", "type": "string", "required": true },
-          "name": { "title": "Name override", "type": "string" },
-          "exclude": { "title": "Hide this thermostat", "type": "boolean", "default": false }
-        } }
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "Resideo Native"
       },
-      "debug": { "title": "Debug logging", "type": "boolean", "default": false, "description": "Log discovery counts. Credentials, tokens and cloud responses are never logged." }
-    }
+      "country": {
+        "title": "Resideo account country",
+        "type": "string",
+        "default": "RO",
+        "pattern": "^[A-Za-z]{2}$",
+        "description": "Two-letter country used by your Resideo app account. Used for sign-in."
+      },
+      "pollInterval": {
+        "title": "Account refresh interval (seconds)",
+        "type": "integer",
+        "minimum": 30,
+        "maximum": 600,
+        "default": 60,
+        "description": "One shared poll for all thermostats. Commands also request a server readback."
+      },
+      "defaultHold": {
+        "title": "Manual temperature changes",
+        "type": "string",
+        "enum": [
+          "TemporaryHold",
+          "PermanentHold"
+        ],
+        "default": "TemporaryHold",
+        "description": "Temporary hold lasts until the next scheduled period. An existing permanent hold is preserved."
+      },
+      "exposeHoldSwitches": {
+        "title": "Show schedule and permanent-hold switches",
+        "type": "boolean",
+        "default": true
+      },
+      "devices": {
+        "title": "Optional device overrides",
+        "type": "array",
+        "default": [],
+        "description": "Leave empty to discover all thermostats. Obtain device IDs with Test connection above. Blank rows are ignored.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "title": "Device ID",
+              "type": "string"
+            },
+            "name": {
+              "title": "Name override",
+              "type": "string"
+            },
+            "exclude": {
+              "title": "Hide this thermostat",
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "required": [
+            "id"
+          ]
+        }
+      },
+      "debug": {
+        "title": "Debug logging",
+        "type": "boolean",
+        "default": false,
+        "description": "Log discovery counts. Credentials, tokens and cloud responses are never logged."
+      }
+    },
+    "required": [
+      "name"
+    ]
   }
 }
